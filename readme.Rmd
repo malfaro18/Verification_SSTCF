@@ -1,0 +1,74 @@
+---
+title: "Code and documentation for TC Outlook Verification Procedure"
+output: html_notebook
+sansfont: Calibri Light
+---
+
+```{r include = FALSE}
+library(viridis)
+```
+
+The code in this folder demonstrates how to read the data, run the forecasting models for TC in the Atlantic Basin, and then verify them. The data set is composed of data from 1950-2015 and by 35 different climate indices. The responses are extracted from this [website](http://www.nhc.noaa.gov/data/) and classified according to the region (by eye).
+
+# Data
+
+The files <span style="color:red">*getDATA_base.R*</span> and <span style="color:red">*Data_v2.R*</span> are used to read the data from the web pages and create the R data files that we are going to use in this analysis. In order to update them, you will have to go through the code of <span style="color:red">*getDATA_base.R*</span> and make sure it is reading the data from the correct web pages (there are some changes in the sources from year to year). Also, make sure that the format in said page hasn't changed, as it usually happens. This change of format might cause errors in the reading process. For now, we stored all the data up to 2015 in the file <span style="color:red">*alldataX.Rdata*</span>.
+
+```{r read_data, message=FALSE, warning=FALSE}
+rm(list=ls())
+load(file="alldataX.Rdata") 
+```
+
+## Description 
+
+```{r descrip, results='hide', message=FALSE, warning=FALSE}
+respu<-c("ATL TS","ATL HU","ATL MH",
+         "CAR TS","CAR HU","CAR MH",
+         "GOM TS","GOM HU","GOM MH")
+
+par(mfrow=c(3,3))
+lapply(1:9,function(x)hist(yy0[[x]], main=respu[x], xlab="Number of storms",xlim=c(0,30)))
+```
+
+We saved the data indices in the following way:
+
+```{r tablesX, message=FALSE, warning=FALSE}
+length(dataX) ## 9 different models: $F_{IB}$ with I=1:3 and B = base, LHF and nino 
+sapply(1:9,function(x)dim(dataX[[x]])) ## 65 years and then p number of covariates
+```
+
+## Correlations
+Climate indices are saved in each of the 9 lists depending on how to define each model. We plot the correlations for the 9th data set, as an example.
+
+```{r tablesX2, results='hide',echo=FALSE, message=FALSE, warning=FALSE,fig.width=10, fig.height=9}
+library(corrplot)
+corrplot(cor(dataX[[9]]), order="hclust")
+```
+
+# Models (cluster and cluster + LASSO )
+
+In summary, the following set of covariates are used to make a comparison using the verification method, for each response:
+
+* $F_{1X}$: March Outlook using core ($F_{1B}$), core and NINO ($F_{1N}$), or core, NINO and LHF variables ($F_{1L}$). The model is constructed using data from January and February.
+* $F_{2X}$: May Outlook using core ($F_{2B}$), core and NINO ($F_{2N}$), or core, NINO and LHF variables ($F_{2L}$). The model is constructed using data from January to April.
+* $F_{3X}$: March Outlook and NINO Oracle using core ($F_{3B}$), core and NINO ($F_{3N}$), or core, NINO and LHF variables ($F_{3L}$). The model is constructed using data from January and February, plus the NINO values from July, August, and September. This model uses NINO information that is not available until the beginning of the hurricane season, but it is used to evaluate the possibility of equating the future NINO values' forecast skill with other variables.
+\end{description}
+
+Each set is going to be used to run two models: cluster model and LASSO. LASSO is nested into the cluster model since the variable selection is done using the 10 covariates from the cluster model.
+
+# Verification method
+
+The following cross-validation methods are used:
+
+* SWCV: Sliding window cross-validation.
+* RCV: Regular or leave-on-out cross validation is used as a comparison. Again, future data is used to forecast the past.
+
+The following scoring methods are used:
+
+* $H = LS(F_1,y) - LS(F_2,2)$ to compare model $F_1$ and $F_2$
+* $D = MSE_{F_1} - MSE_{F_2}$ to compare model $F_1$ and $F_2$
+
+# Processing results
+
+The code to run the verification procedure is in the file <span style="color:red">*functions_tosubmit.R*</span> and includes the calculation of the SE via nonparametric bootstrap. The file <span style="color:red">*rep_tosubmit.R*</span> includes all the necessary code to reproduce plots and figures to compare H and MSE for all models, included in the paper. 
+
