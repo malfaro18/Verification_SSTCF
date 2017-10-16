@@ -31,7 +31,7 @@ amm<-cbind(unique(amm1[,1])[-c(1:2)],t(matrix(c(amm1[-c(1:24),3],rep(NA,hmm)),nr
 colnames(amm)<-c("year", "JAN","FEB","MAR","APR",
                   "MAY","JUN","JUL","AUG",
                   "SEP","OCT","NOV","DEC")
-amm<-data.frame(amm[-67,]);rm(amm1);rm(hmm);amm
+amm<-data.frame(amm[-c(67:68),]);rm(amm1);rm(hmm);amm
 
 ## AMO (Atlantic Multi-decadal Oscillation)
 ########################################################
@@ -107,6 +107,7 @@ nao<-readhttp(h,n); rm(h,n);nao
 h<-"http://www.esrl.noaa.gov/psd/data/correlation/epo.data"
 n<-70
 epo<-readhttp(h,n); rm(h,n);epo
+epo[,13]<-apply(epo[,c(2:12)],1,mean)
 
 ## PNA (Pacific North American Index)
 ########################################################
@@ -120,10 +121,10 @@ h<-"http://www.esrl.noaa.gov/psd/data/correlation/qbo.data"
 n<-70
 qbo<-readhttp(h,n); rm(h,n);qbo
 
-## GGST 
-## Save txt file in computer: http://data.giss.nasa.gov/gistemp/tabledata_v3/GLB.Ts.txt
-########################################################
-ggst<-read.fwf(file="http://data.giss.nasa.gov/gistemp/tabledata_v3/GLB.Ts.txt",skip=84,
+# ## GGST 
+# ## Save txt file in computer: http://data.giss.nasa.gov/gistemp/tabledata_v3/GLB.Ts.txt
+# ########################################################
+ggst<-read.fwf(file="http://data.giss.nasa.gov/gistemp/tabledata_v3/GLB.Ts.txt",skip=84,n=72,
          width = c(6,rep(5,12), rep(5,6),6))[-c(12,13,34,35,56,57,73:100),-c(14:20)]
 ggst<-do.call(cbind,lapply(ggst,function(x)as.numeric(as.character(x))))
 colnames(ggst)<-c("year","JAN","FEB","MAR","APR",
@@ -131,10 +132,10 @@ colnames(ggst)<-c("year","JAN","FEB","MAR","APR",
                 "SEP","OCT","NOV","DEC")
 ggst<-data.frame(ggst);ggst
 
-## NGST
-## Save txt file in computer: http://data.giss.nasa.gov/gistemp/tabledata_v3/NH.Ts.txt
-########################################################
-ngst<-read.fwf(file="http://data.giss.nasa.gov/gistemp/tabledata_v3/NH.Ts.txt",skip=84,
+# ## NGST
+# ## Save txt file in computer: http://data.giss.nasa.gov/gistemp/tabledata_v3/NH.Ts.txt
+# ########################################################
+ngst<-read.fwf(file="http://data.giss.nasa.gov/gistemp/tabledata_v3/NH.Ts.txt",skip=84,n=72,
          width = c(6,rep(5,12), rep(5,6),6))[-c(12,13,34,35,56,57,73:100),-c(14:20)]
 ngst<-do.call(cbind,lapply(ngst,function(x)as.numeric(as.character(x))))
 colnames(ngst)<-c("year","JAN","FEB","MAR","APR",
@@ -142,11 +143,11 @@ colnames(ngst)<-c("year","JAN","FEB","MAR","APR",
                 "SEP","OCT","NOV","DEC")
 ngst<-data.frame(ngst);ngst
 
-## SGST
-## Save txt file in computer: http://data.giss.nasa.gov/gistemp/tabledata_v3/SH.Ts.txt
-########################################################
-sgst<-read.fwf(file="http://data.giss.nasa.gov/gistemp/tabledata_v3/SH.Ts.txt",skip=84,
-               width = c(6,rep(5,12), rep(5,6),6))[-c(12,13,34,35,56,57,73:100),-c(14:20)]
+# ## SGST
+# ## Save txt file in computer: http://data.giss.nasa.gov/gistemp/tabledata_v3/SH.Ts.txt
+# ########################################################
+sgst<-read.fwf(file="http://data.giss.nasa.gov/gistemp/tabledata_v3/SH.Ts.txt",skip=84, n=72,
+               width = c(6,rep(5,12), rep(5,6),6))[-c(12,13,34,35,56,57),-c(14:21)]
 sgst<-do.call(cbind,lapply(sgst,function(x)as.numeric(as.character(x))))
 colnames(sgst)<-c("year","JAN","FEB","MAR","APR",
                   "MAY","JUN","JUL","AUG",
@@ -163,14 +164,14 @@ ao<-data.frame(ao);ao
 
 ## SFI (Solar Flux)
 ########################################################
-h<-"sfi.txt"
-sfi1<-data.frame(read.table(h, header=F))
-sfi<-cbind(unique(sfi1[,1])[-c(1:3)],t(matrix(as.numeric(as.character((sfi1[-c(1:36),3]))),nrow=12)))
-sfi[67,3:13]<-NA
-colnames(sfi)<-c("year", "JAN","FEB","MAR","APR",
-                 "MAY","JUN","JUL","AUG",
-                 "SEP","OCT","NOV","DEC")
-sfi<-data.frame(sfi[-67,]);rm(sfi1);sfi
+# h<-"sfi.txt"
+# sfi1<-data.frame(read.table(h, header=F))
+# sfi<-cbind(unique(sfi1[,1])[-c(1:3)],t(matrix(as.numeric(as.character((sfi1[-c(1:36),3]))),nrow=12)))
+# sfi[67,3:13]<-NA
+# colnames(sfi)<-c("year", "JAN","FEB","MAR","APR",
+#                  "MAY","JUN","JUL","AUG",
+#                  "SEP","OCT","NOV","DEC")
+# sfi<-data.frame(sfi[-67,]);rm(sfi1);sfi
 
 ## ftp://ftp.ngdc.noaa.gov/STP/space-weather/solar-data/solar-features/solar-radio/noontime-flux/penticton/penticton_observed/listings/listing_drao_noontime-flux-observed_monthly.txt
 ## http://www.esrl.noaa.gov/psd/data/correlation/solar.data
@@ -258,7 +259,6 @@ rm(resp)
 ########################################################
 ########################################################
 ########################################################
-rm(h)
 ls()
 
 ### NINO:
@@ -297,7 +297,7 @@ censo<-readhttp(h,n); rm(h,n);censo
 #ONI
 h<-"http://www.esrl.noaa.gov/psd/data/correlation/oni.data"
 ########################################################
-n<-67
+n<-70
 oni<-readhttp(h,n); rm(h,n);oni
 
 #MEI
