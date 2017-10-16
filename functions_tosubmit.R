@@ -15,6 +15,7 @@ library(MASS)
 library(plyr)
 library(glmnet)
 library(ggplot2)
+library(hqreg)
 
 ##################################
 ###### define functions  #########
@@ -28,6 +29,36 @@ getscores<-function(pred,obs,average,Y){
   H1            <-   clima1-score
   H2            <-   clima2-score
   return(list(H1=H1,H2=H2))
+}
+
+runrobustLASSO<-function(Y,X,a,b,c){
+  range          <-  c(a:b)[-c]
+  cordata        <-  cor(do.call(cbind,X[range,]))
+  hc             <-  hclust(dist(cordata))
+  varord         <-  (cutree(hc, k = 10))
+  sortedlist     <-  sort(abs(cor(cbind(Y[range],X[range,]))[1,-1]))
+  sel            <-  c()
+  for(i in 1:10){
+    allvar       <-  varord[varord==i]
+    selected     <-  sort(sortedlist[names(allvar)], decreasing=T)[1]
+    sel          <-  c(sel,names(selected))
+  }
+  data           <-  X[,sel]
+  data1          <-  data.frame(cbind(Y[range],
+                                      scale(data[range,])))
+  names(data1)   <-  c("resp",names(data))
+  cvout          <-  cv.hqreg(X=data.matrix(data1[,-1]),y=log(as.vector(data1[,1])), seed=123)
+  mm             <-  apply(data[range,],2,mean)
+  sd             <-  apply(data[range,],2,sd)
+  newdata1       <-  data.frame(cbind(Y[c],t(apply(data[c,],1,
+                                                   function(x)(x-mm)/sd))))
+  names(newdata1)<-  c("resp",names(data))
+  pred           <-  predict(cvout, s="lambda.min",
+                             X=data.matrix(newdata1[,-1]),type="response")
+  res            <-  data.frame(cbind(exp(pred),Y[c]),mean(Y[range]))
+  names(res)     <-  c("pred","real","average")
+  scores         <-  getscores(res$pred,res$real,res$average,Y[range])
+  return(list(res=res,scores=scores, sel=names(which(cvout$fit$beta[,61]!=0))[-1]))
 }
 
 runLASSO<-function(Y,X,a,b,c){
@@ -150,7 +181,7 @@ validation<-function(Y,X,var.sel=TRUE){
   ## 35 windows of 30 years each
   if (!var.sel) {
     res1<-lapply(1:wd,function(w){
-      try(runGLM(Y,X,wdef[w,1],wdef[w,2],wdef[w,2]+1))})
+      try(runrobustLASSO(Y,X,wdef[w,1],wdef[w,2],wdef[w,2]+1))})
   } else {
     res1<-lapply(1:wd,function(w){
       try(runLASSO(Y,X,wdef[w,1],wdef[w,2],wdef[w,2]+1))})
@@ -164,7 +195,7 @@ validation<-function(Y,X,var.sel=TRUE){
   wall<-cbind(rep(1,N),rep(N,N),c(1:N))
   if (!var.sel) {
      res3<-lapply(1:65,function(w){
-           try(runGLM(Y,X,wall[w,1],wall[w,2],wall[w,3]))
+           try(runrobustLASSO(Y,X,wall[w,1],wall[w,2],wall[w,3]))
            })
   } else {
     res3<-lapply(1:65,function(w){
@@ -192,5 +223,9 @@ validation<-function(Y,X,var.sel=TRUE){
   result <- list(tabSWCV=scores1,tabRCV=scores2, resSWCV=res1proc,resRCV=res2proc,betas)
   return(result)
 }
+
+
+
+
 
 #### End ####

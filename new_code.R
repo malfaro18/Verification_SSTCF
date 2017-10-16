@@ -15,16 +15,38 @@ matlines(scale(data)[,1])
 
 ## OPtion 1: devide the data into training and testing
 
-runGLM(data[,1],data[,-1],1,64,64:65)
-runLASSO(data[,1],data[,-1],1,64,64:65)
-
+runGLM(data[,1],data[,-1],1,64,64:65)$scores$H1
+runLASSO(data[,1],data[,-1],1,64,64:65)$scores$H1
+runrobustLASSO(data[,1],data[,-1],1,64,64:65)$scores$H1
 
 ## Option 2: Moving Windows
 
-#Poisson Regression
-#LASSO
-#Ridge
+   Y<-yy0[[1]]
+   X<-dataX[[1]]
+  a<-validation(Y,X,var.sel=TRUE)
+  b<-validation(Y,X,var.sel=FALSE)
+
+allresults<-list(a,b)
+save(allresults, file="allresultsCOR_robustvsLASSO.Rdata")
+
+## Robust version:
+med<-apply(a$tabSWCV,2,median);med
+apply(a$tabSWCV,2,sd)/length(med)
+
+med<-apply(a$tabRCV,2,median);med
+apply(a$tabRCV,2,sd)/length(med)
+
+## Non Robust version:
+med<-apply(b$tabSWCV,2,median);med
+apply(b$tabSWCV,2,sd)/length(med)
+
+med<-apply(b$tabRCV,2,median);med
+apply(b$tabRCV,2,sd)/length(med)
+
+
 #BMA
+
+
 #Neural Networks
 
 
